@@ -50,7 +50,9 @@ export function calcHealthLevel(health) {
   return 'high';
 }
 
-export function formatStats({ level, attack, defence, health }) {
+export function formatStats({
+  level, attack, defence, health,
+}) {
   return `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`;
 }
 
@@ -61,14 +63,14 @@ export function indexToRC(index, size = BOARD_SIZE) {
 }
 export function rcToIndex(r, c, size = BOARD_SIZE) { return r * size + c; }
 export function chebyshev(a, b, size = BOARD_SIZE) {
-  const A = indexToRC(a, size), B = indexToRC(b, size);
+  const A = indexToRC(a, size); const
+    B = indexToRC(b, size);
   return Math.max(Math.abs(A.r - B.r), Math.abs(A.c - B.c));
 }
 
-
 const dirs = [
-  [-1,0],[1,0],[0,-1],[0,1], 
-  [-1,-1],[-1,1],[1,-1],[1,1] 
+  [-1, 0], [1, 0], [0, -1], [0, 1],
+  [-1, -1], [-1, 1], [1, -1], [1, 1],
 ];
 
 export function reachableBySteps(from, maxSteps, size = BOARD_SIZE) {
@@ -76,7 +78,8 @@ export function reachableBySteps(from, maxSteps, size = BOARD_SIZE) {
   const cells = new Set();
   for (const [dr, dc] of dirs) {
     for (let step = 1; step <= maxSteps; step++) {
-      const nr = r + dr * step, nc = c + dc * step;
+      const nr = r + dr * step; const
+        nc = c + dc * step;
       if (nr < 0 || nc < 0 || nr >= size || nc >= size) break;
       cells.add(rcToIndex(nr, nc, size));
     }
@@ -85,7 +88,6 @@ export function reachableBySteps(from, maxSteps, size = BOARD_SIZE) {
 }
 
 export function attackRadius(from, maxRange, size = BOARD_SIZE) {
-  
   const res = new Set();
   const { r, c } = indexToRC(from, size);
   for (let nr = 0; nr < size; nr++) {

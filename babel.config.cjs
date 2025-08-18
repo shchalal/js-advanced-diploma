@@ -3,7 +3,7 @@ module.exports = {
     ['@babel/preset-env', { targets: { esmodules: true } }]
   ],
   plugins: [
-    ['@babel/plugin-transform-runtime', { helpers: true }]
+    ['@babel/plugin-transform-runtime', { "regenerator": true }]
   ]
 };
 

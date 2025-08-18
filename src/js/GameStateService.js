@@ -5,7 +5,6 @@ export default class GameStateService {
   }
 
   save(state) {
-    
     const json = JSON.stringify(state);
     this.storage.setItem(this.key, json);
   }
@@ -26,4 +25,3 @@ export default class GameStateService {
     this.storage.removeItem(this.key);
   }
 }
-

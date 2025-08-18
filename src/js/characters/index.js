@@ -1,6 +1,6 @@
-export { default as Bowman } from './Bowman.js';
-export { default as Swordsman } from './Swordsman.js';
-export { default as Magician } from './Magician.js';
-export { default as Vampire } from './Vampire.js';
-export { default as Undead } from './Undead.js';
-export { default as Daemon } from './Daemon.js';
+export { default as Bowman } from './Bowman';
+export { default as Swordsman } from './Swordsman';
+export { default as Magician } from './Magician';
+export { default as Vampire } from './Vampire';
+export { default as Undead } from './Undead';
+export { default as Daemon } from './Daemon';

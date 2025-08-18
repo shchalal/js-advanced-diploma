@@ -15,9 +15,7 @@
 import Character from './Character';
 
 export default class Team {
-
   constructor(characters = []) {
-  
     this.characters = [];
     this.addAll(...characters);
   }
@@ -30,12 +28,10 @@ export default class Team {
     return this;
   }
 
-  
   addAll(...characters) {
     characters.forEach((c) => this.add(c));
     return this;
   }
-
 
   removeAt(index) {
     if (index < 0 || index >= this.characters.length) return null;
@@ -43,19 +39,15 @@ export default class Team {
     return removed ?? null;
   }
 
- 
   clear() {
     this.characters.length = 0;
   }
-
 
   get size() {
     return this.characters.length;
   }
 
-  /
-  *[Symbol.iterator]() {
+  * [Symbol.iterator]() {
     yield* this.characters;
   }
 }
-

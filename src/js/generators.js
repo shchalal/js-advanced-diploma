@@ -9,6 +9,7 @@
  *
  */
 import Team from './Team';
+
 export function* characterGenerator(allowedTypes, maxLevel) {
   while (true) {
     const Type = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
@@ -25,4 +26,3 @@ export default function generateTeam(allowedTypes, maxLevel, characterCount) {
   }
   return new Team(chars);
 }
-

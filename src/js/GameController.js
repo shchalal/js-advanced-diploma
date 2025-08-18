@@ -1,6 +1,8 @@
 import themes from './themes';
 import PositionedCharacter from './PositionedCharacter';
-import { Bowman, Swordsman, Magician, Vampire, Undead, Daemon } from './characters';
+import {
+  Bowman, Swordsman, Magician, Vampire, Undead, Daemon,
+} from './characters';
 import generateTeam from './generators';
 import { formatStats } from './utils';
 import GameState from './GameState';
@@ -30,7 +32,7 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
     this.gamePlay.addNewGameListener?.(() => this.newGame());
-   
+
     this.gamePlay.addSaveGameListener?.(() => this.saveGame());
     this.gamePlay.addLoadGameListener?.(() => this.loadGame());
 
@@ -44,14 +46,11 @@ export default class GameController {
     }
   }
 
-
-
   onCellClick(index) {
     if (this.state.locked) return;
 
     const pcAt = this.getPCAt(index);
-    const selected = this.selected;
-
+    const { selected } = this;
 
     if (pcAt && this.isPlayerCharacter(pcAt)) {
       if (selected && selected.position !== index) {
@@ -62,17 +61,15 @@ export default class GameController {
       this.gamePlay.selectCell(index);
       return;
     }
-ка
+
     if (!selected) {
       this.gamePlay.showError('Выберите своего персонажа');
       return;
     }
 
-
     const { move, attack } = this.rangeByType(selected.character.type);
     const moveSet = this.reachableBySteps(selected.position, move);
     const attackSet = this.attackRadius(selected.position, attack);
-
 
     if (!pcAt && moveSet.has(index)) {
       selected.position = index;
@@ -80,13 +77,11 @@ export default class GameController {
       return;
     }
 
-
     if (pcAt && !this.isPlayerCharacter(pcAt) && attackSet.has(index)) {
       this.attack(selected, pcAt).then(() => this.afterPlayerAction());
       return;
     }
 
-   
     this.gamePlay.showError('Недопустимое действие');
   }
 
@@ -111,7 +106,7 @@ export default class GameController {
   }
 
   updateCursorAndHighlights(index) {
-    const selected = this.selected;
+    const { selected } = this;
     const pcAt = this.getPCAt(index);
 
     if (pcAt && this.isPlayerCharacter(pcAt)) {
@@ -138,8 +133,6 @@ export default class GameController {
     }
   }
 
-
-
   afterPlayerAction() {
     this.state.clearSelection();
     this.selected = null;
@@ -155,14 +148,13 @@ export default class GameController {
   async aiTurn() {
     if (this.state.locked) return;
 
-    const aiUnits = this.positions.filter(p => !this.isPlayerCharacter(p));
-    const playerUnits = this.positions.filter(p => this.isPlayerCharacter(p));
+    const aiUnits = this.positions.filter((p) => !this.isPlayerCharacter(p));
+    const playerUnits = this.positions.filter((p) => this.isPlayerCharacter(p));
 
-   
     for (const unit of aiUnits) {
       const { attack } = this.rangeByType(unit.character.type);
       const zone = this.attackRadius(unit.position, attack);
-      const target = playerUnits.find(p => zone.has(p.position));
+      const target = playerUnits.find((p) => zone.has(p.position));
       if (target) {
         await this.attack(unit, target);
         this.gamePlay.redrawPositions(this.positions);
@@ -173,16 +165,15 @@ export default class GameController {
       }
     }
 
-    
-    const occupied = new Set(this.positions.map(p => p.position));
+    const occupied = new Set(this.positions.map((p) => p.position));
     const pickMove = (u) => {
       const { move } = this.rangeByType(u.character.type);
-      const candidates = [...this.reachableBySteps(u.position, move)].filter(i => !occupied.has(i));
+      const candidates = [...this.reachableBySteps(u.position, move)].filter((i) => !occupied.has(i));
       if (candidates.length === 0) return u.position;
       let best = candidates[0];
       let bestScore = Infinity;
       for (const c of candidates) {
-        const score = Math.min(...playerUnits.map(p => this.chebyshev(c, p.position)));
+        const score = Math.min(...playerUnits.map((p) => this.chebyshev(c, p.position)));
         if (score < bestScore) { bestScore = score; best = c; }
       }
       return best;
@@ -208,18 +199,16 @@ export default class GameController {
 
     if (tgt.health === 0) {
       const wasEnemy = !this.isPlayerCharacter(targetPC);
-      this.positions = this.positions.filter(p => p !== targetPC);
+      this.positions = this.positions.filter((p) => p !== targetPC);
       if (wasEnemy) this.state.score += 100;
     }
 
     this.gamePlay.redrawPositions(this.positions);
   }
 
-
-
   checkEndConditions() {
-    const playerAlive = this.positions.some(p => this.isPlayerCharacter(p));
-    const enemyAlive = this.positions.some(p => !this.isPlayerCharacter(p));
+    const playerAlive = this.positions.some((p) => this.isPlayerCharacter(p));
+    const enemyAlive = this.positions.some((p) => !this.isPlayerCharacter(p));
 
     if (!playerAlive) {
       this.state.locked = true;
@@ -262,16 +251,14 @@ export default class GameController {
     this.save();
   }
 
-
-
   spawnInitialTeams() {
     this.positions = [];
 
     const colsPlayer = [0, 1];
-    const colsEnemy  = [6, 7];
+    const colsEnemy = [6, 7];
 
     const playerTeam = generateTeam(this.playerTypes, 2, 3);
-    const enemyTeam  = generateTeam(this.enemyTypes, 2, 3);
+    const enemyTeam = generateTeam(this.enemyTypes, 2, 3);
 
     const free = new Set([...Array(this.boardSize * this.boardSize)].map((_, i) => i));
 
@@ -295,8 +282,8 @@ export default class GameController {
   }
 
   spawnNewWave() {
-    const players = this.positions.filter(p => this.isPlayerCharacter(p));
-    const enemies = this.positions.filter(p => !this.isPlayerCharacter(p));
+    const players = this.positions.filter((p) => this.isPlayerCharacter(p));
+    const enemies = this.positions.filter((p) => !this.isPlayerCharacter(p));
 
     if (enemies.length > 0) return;
 
@@ -306,7 +293,7 @@ export default class GameController {
     const enemyTeam = generateTeam(this.enemyTypes, lvl, needed);
 
     const free = new Set([...Array(this.boardSize * this.boardSize)].map((_, i) => i));
-    players.forEach(p => free.delete(p.position));
+    players.forEach((p) => free.delete(p.position));
 
     const colsEnemy = [6, 7];
 
@@ -326,20 +313,24 @@ export default class GameController {
   }
 
   levelUpPlayers() {
-    for (const p of this.positions) {
-      if (!this.isPlayerCharacter(p)) continue;
+  for (const p of this.positions) {
+     if (this.isPlayerCharacter(p)) {            
       const ch = p.character;
       ch.level = Math.min(4, ch.level + 1);
 
       const newHealth = Math.min(100, ch.level + 80);
-      const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * (80 + ch.health) / 100));
-      const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * (80 + ch.health) / 100));
+
+     
+      const ratio = (80 + ch.health) / 100;
+      const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * ratio));
+      const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * ratio));
 
       ch.attack = attackAfter;
       ch.defence = defenceAfter;
       ch.health = newHealth;
     }
   }
+}
 
   applyThemeForLevel(level) {
     const order = [themes.prairie, themes.desert, themes.arctic, themes.mountain];
@@ -348,14 +339,12 @@ export default class GameController {
     this.gamePlay.drawUi(theme);
   }
 
- 
-
   isPlayerCharacter(pc) {
     return ['bowman', 'swordsman', 'magician'].includes(pc.character.type);
   }
 
   getPCAt(index) {
-    return this.positions.find(p => p.position === index);
+    return this.positions.find((p) => p.position === index);
   }
 
   rangeByType(type) {
@@ -437,11 +426,9 @@ export default class GameController {
     }
   }
 
-
-
   save() {
     try {
-      this.state.positions = this.positions.map(p => ({
+      this.state.positions = this.positions.map((p) => ({
         position: p.position,
         character: {
           type: p.character.type,
@@ -451,9 +438,9 @@ export default class GameController {
           health: p.character.health,
         },
       }));
-      this.stateService.save(this.state); 
+      this.stateService.save(this.state);
     } catch (e) {
-     
+
     }
   }
 
@@ -473,7 +460,6 @@ export default class GameController {
   }
 
   deserialize(data) {
-   
     if (data && 'state' in data && 'positions' in data) {
       const merged = { ...data.state, positions: data.positions };
       this.state = GameState.from(merged);
@@ -481,7 +467,7 @@ export default class GameController {
       this.state = GameState.from(data);
     }
 
-    this.positions = this.state.positions.map(p => {
+    this.positions = this.state.positions.map((p) => {
       const Ctor = this.typeToCtor(p.character.type);
       const ch = new Ctor(1);
       ch.level = p.character.level;
@@ -490,7 +476,6 @@ export default class GameController {
       ch.health = p.character.health;
       return new PositionedCharacter(ch, p.position);
     });
-
 
     if (Number.isInteger(this.state.selected)) {
       const pc = this.getPCAt(this.state.selected);

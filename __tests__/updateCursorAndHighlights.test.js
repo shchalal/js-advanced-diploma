@@ -1,8 +1,6 @@
-
 import GameController from '../src/js/GameController';
 import PositionedCharacter from '../src/js/PositionedCharacter';
 import { Bowman, Vampire } from '../src/js/characters';
-
 
 function createGamePlayStub() {
   return {
@@ -36,7 +34,7 @@ describe('updateCursorAndHighlights', () => {
 
     const player = new PositionedCharacter(new Bowman(1), 27);
     gc.positions = [player];
-    gc.selected = player; 
+    gc.selected = player;
 
     gc.updateCursorAndHighlights(27);
 
@@ -48,12 +46,11 @@ describe('updateCursorAndHighlights', () => {
   test('hover empty cell within move range -> pointer + green highlight', () => {
     const { gc, gamePlay } = createGC();
 
-    
     const player = new PositionedCharacter(new Bowman(1), 27);
     gc.positions = [player];
     gc.selected = player;
 
-    const emptyMovable = 29; 
+    const emptyMovable = 29;
     gc.updateCursorAndHighlights(emptyMovable);
 
     expect(gamePlay.setCursor).toHaveBeenCalledWith('pointer');
@@ -63,7 +60,6 @@ describe('updateCursorAndHighlights', () => {
   test('hover enemy in attack radius -> crosshair + red highlight', () => {
     const { gc, gamePlay } = createGC();
 
- 
     const player = new PositionedCharacter(new Bowman(1), 27);
     const enemy = new PositionedCharacter(new Vampire(1), 29);
     gc.positions = [player, enemy];
@@ -78,12 +74,11 @@ describe('updateCursorAndHighlights', () => {
   test('hover invalid cell (neither move nor attack) -> notallowed', () => {
     const { gc, gamePlay } = createGC();
 
-
     const player = new PositionedCharacter(new Bowman(1), 27);
     gc.positions = [player];
     gc.selected = player;
 
-    const invalid = 63; 
+    const invalid = 63;
     gc.updateCursorAndHighlights(invalid);
 
     expect(gamePlay.setCursor).toHaveBeenCalledWith('notallowed');
@@ -93,7 +88,6 @@ describe('updateCursorAndHighlights', () => {
   test('no selected unit and hover empty -> notallowed', () => {
     const { gc, gamePlay } = createGC();
 
- 
     const player = new PositionedCharacter(new Bowman(1), 27);
     gc.positions = [player];
     gc.selected = null;
