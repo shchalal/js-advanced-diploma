@@ -1,17 +1,29 @@
 export default class GameStateService {
-  constructor(storage) {
+  constructor(storage, key = 'state') {
     this.storage = storage;
+    this.key = key;
   }
 
   save(state) {
-    this.storage.setItem('state', JSON.stringify(state));
+    
+    const json = JSON.stringify(state);
+    this.storage.setItem(this.key, json);
   }
 
   load() {
+    const raw = this.storage.getItem(this.key);
+    if (!raw) {
+      throw new Error('No saved state');
+    }
     try {
-      return JSON.parse(this.storage.getItem('state'));
-    } catch (e) {
-      throw new Error('Invalid state');
+      return JSON.parse(raw);
+    } catch (_) {
+      throw new Error('Invalid saved state');
     }
   }
+
+  clear() {
+    this.storage.removeItem(this.key);
+  }
 }
+

@@ -13,12 +13,15 @@
  * vampire
  */
 export default class Character {
-  constructor(level, type = 'generic') {
+  constructor(level = 1, type) {
+    if (new.target === Character) {
+      throw new Error('Character is abstract');
+    }
     this.level = level;
     this.attack = 0;
     this.defence = 0;
-    this.health = 50;
+    this.health = 50; 
     this.type = type;
-    // TODO: выбросите исключение, если кто-то использует "new Character()"
   }
 }
+
