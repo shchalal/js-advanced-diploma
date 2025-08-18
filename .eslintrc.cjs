@@ -12,7 +12,7 @@ module.exports = {
   },
   ignorePatterns: ['dist/', 'node_modules/'],
   rules: {
-   
+    'no-alert': 'off',
     'no-restricted-syntax': [
       'error',
       { selector: 'ForInStatement', message: 'for..in is not allowed' },

@@ -13,7 +13,7 @@
  * vampire
  */
 export default class Character {
-  constructor(level, type) { 
+  constructor(level, type) {
     if (new.target === Character) {
       throw new Error('Character is abstract');
     }
@@ -24,4 +24,3 @@ export default class Character {
     this.health = 100;
   }
 }
-

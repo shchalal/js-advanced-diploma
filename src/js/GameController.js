@@ -313,24 +313,23 @@ export default class GameController {
   }
 
   levelUpPlayers() {
-  for (const p of this.positions) {
-     if (this.isPlayerCharacter(p)) {            
-      const ch = p.character;
-      ch.level = Math.min(4, ch.level + 1);
+    for (const p of this.positions) {
+      if (this.isPlayerCharacter(p)) {
+        const ch = p.character;
+        ch.level = Math.min(4, ch.level + 1);
 
-      const newHealth = Math.min(100, ch.level + 80);
+        const newHealth = Math.min(100, ch.level + 80);
 
-     
-      const ratio = (80 + ch.health) / 100;
-      const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * ratio));
-      const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * ratio));
+        const ratio = (80 + ch.health) / 100;
+        const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * ratio));
+        const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * ratio));
 
-      ch.attack = attackAfter;
-      ch.defence = defenceAfter;
-      ch.health = newHealth;
+        ch.attack = attackAfter;
+        ch.defence = defenceAfter;
+        ch.health = newHealth;
+      }
     }
   }
-}
 
   applyThemeForLevel(level) {
     const order = [themes.prairie, themes.desert, themes.arctic, themes.mountain];
@@ -396,18 +395,21 @@ export default class GameController {
   }
 
   attackRadius(from, maxRange) {
-    const { r, c } = this.indexToRC(from);
-    const res = new Set();
-    for (let nr = 0; nr < this.boardSize; nr += 1) {
-      for (let nc = 0; nc < this.boardSize; nc += 1) {
-        if (nr === r && nc === c) continue;
-        if (Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange) {
-          res.add(this.rcToIndex(nr, nc));
-        }
+  const { r, c } = this.indexToRC(from);
+  const res = new Set();
+
+  for (let nr = 0; nr < this.boardSize; nr += 1) {
+    for (let nc = 0; nc < this.boardSize; nc += 1) {
+      if (
+        !(nr === r && nc === c) &&
+        Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange
+      ) {
+        res.add(this.rcToIndex(nr, nc));
       }
     }
-    return res;
   }
+  return res;
+}
 
   getRandomFreeCell(candidates) {
     if (!candidates.length) throw new Error('No free cells to place a character');

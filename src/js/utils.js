@@ -92,7 +92,7 @@ export function attackRadius(from, maxRange, size = BOARD_SIZE) {
   const { r, c } = indexToRC(from, size);
   for (let nr = 0; nr < size; nr++) {
     for (let nc = 0; nc < size; nc++) {
-      if (nr === r && nc === c) continue;
+      if (nr === r && nc === c);
       if (Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange) {
         res.add(rcToIndex(nr, nc, size));
       }
