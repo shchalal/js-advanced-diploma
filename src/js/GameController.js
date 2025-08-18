@@ -25,6 +25,19 @@ export default class GameController {
     this.onCellClick = this.onCellClick.bind(this);
   }
 
+
+  showErrorFallback(text) {
+
+    alert(text);
+  }
+
+  showError(text) {
+    const gp = this.gamePlay;
+    if (gp && typeof gp.showError === 'function') return gp.showError(text);
+    if (gp && typeof gp.showMessage === 'function') return gp.showMessage(text);
+    return this.showErrorFallback(text);
+  }
+
   init() {
     this.applyThemeForLevel(this.state.level);
 
@@ -32,7 +45,6 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
     this.gamePlay.addNewGameListener?.(() => this.newGame());
-
     this.gamePlay.addSaveGameListener?.(() => this.saveGame());
     this.gamePlay.addLoadGameListener?.(() => this.loadGame());
 
@@ -52,6 +64,7 @@ export default class GameController {
     const pcAt = this.getPCAt(index);
     const { selected } = this;
 
+
     if (pcAt && this.isPlayerCharacter(pcAt)) {
       if (selected && selected.position !== index) {
         this.gamePlay.deselectCell(selected.position);
@@ -62,14 +75,17 @@ export default class GameController {
       return;
     }
 
+
     if (!selected) {
-      this.gamePlay.showError('Выберите своего персонажа');
+      this.showError('Выберите своего персонажа');
       return;
     }
+
 
     const { move, attack } = this.rangeByType(selected.character.type);
     const moveSet = this.reachableBySteps(selected.position, move);
     const attackSet = this.attackRadius(selected.position, attack);
+
 
     if (!pcAt && moveSet.has(index)) {
       selected.position = index;
@@ -77,12 +93,13 @@ export default class GameController {
       return;
     }
 
+ 
     if (pcAt && !this.isPlayerCharacter(pcAt) && attackSet.has(index)) {
       this.attack(selected, pcAt).then(() => this.afterPlayerAction());
       return;
     }
 
-    this.gamePlay.showError('Недопустимое действие');
+    this.showError('Недопустимое действие');
   }
 
   onCellEnter(index) {
@@ -92,7 +109,6 @@ export default class GameController {
     if (pcAt) {
       this.gamePlay.showCellTooltip(formatStats(pcAt.character), index);
     }
-
     this.updateCursorAndHighlights(index);
   }
 
@@ -151,6 +167,7 @@ export default class GameController {
     const aiUnits = this.positions.filter((p) => !this.isPlayerCharacter(p));
     const playerUnits = this.positions.filter((p) => this.isPlayerCharacter(p));
 
+ 
     for (const unit of aiUnits) {
       const { attack } = this.rangeByType(unit.character.type);
       const zone = this.attackRadius(unit.position, attack);
@@ -165,6 +182,7 @@ export default class GameController {
       }
     }
 
+   
     const occupied = new Set(this.positions.map((p) => p.position));
     const pickMove = (u) => {
       const { move } = this.rangeByType(u.character.type);
@@ -172,10 +190,10 @@ export default class GameController {
       if (candidates.length === 0) return u.position;
       let best = candidates[0];
       let bestScore = Infinity;
-      for (const c of candidates) {
+      candidates.forEach((c) => {
         const score = Math.min(...playerUnits.map((p) => this.chebyshev(c, p.position)));
         if (score < bestScore) { bestScore = score; best = c; }
-      }
+      });
       return best;
     };
 
@@ -214,7 +232,7 @@ export default class GameController {
       this.state.locked = true;
       this.state.maxScore = Math.max(this.state.maxScore, this.state.score);
       this.save();
-      this.gamePlay.showError('Game Over');
+      this.showError('Game Over');
       return true;
     }
 
@@ -233,7 +251,7 @@ export default class GameController {
       this.state.locked = true;
       this.state.maxScore = Math.max(this.state.maxScore, this.state.score);
       this.save();
-      this.gamePlay.showError('Победа! Все уровни пройдены');
+      this.showError('Победа! Все уровни пройдены');
       return true;
     }
 
@@ -263,18 +281,18 @@ export default class GameController {
     const free = new Set([...Array(this.boardSize * this.boardSize)].map((_, i) => i));
 
     const placeTeam = (team, cols) => {
-      for (const ch of team.characters) {
+      team.characters.forEach((ch) => {
         const candidates = [];
-        for (let r = 0; r < this.boardSize; r++) {
-          for (const c of cols) {
+        for (let r = 0; r < this.boardSize; r += 1) {
+          cols.forEach((c) => {
             const idx = this.rcToIndex(r, c);
             if (free.has(idx)) candidates.push(idx);
-          }
+          });
         }
         const pos = this.getRandomFreeCell(candidates);
         free.delete(pos);
         this.positions.push(new PositionedCharacter(ch, pos));
-      }
+      });
     };
 
     placeTeam(playerTeam, colsPlayer);
@@ -284,12 +302,10 @@ export default class GameController {
   spawnNewWave() {
     const players = this.positions.filter((p) => this.isPlayerCharacter(p));
     const enemies = this.positions.filter((p) => !this.isPlayerCharacter(p));
-
     if (enemies.length > 0) return;
 
     const needed = Math.max(3, players.length + 1);
     const lvl = Math.min(4, this.state.level);
-
     const enemyTeam = generateTeam(this.enemyTypes, lvl, needed);
 
     const free = new Set([...Array(this.boardSize * this.boardSize)].map((_, i) => i));
@@ -297,38 +313,35 @@ export default class GameController {
 
     const colsEnemy = [6, 7];
 
-    for (const ch of enemyTeam.characters) {
+    enemyTeam.characters.forEach((ch) => {
       const candidates = [];
-      for (let r = 0; r < this.boardSize; r++) {
-        for (const c of colsEnemy) {
+      for (let r = 0; r < this.boardSize; r += 1) {
+        colsEnemy.forEach((c) => {
           const idx = this.rcToIndex(r, c);
           if (free.has(idx)) candidates.push(idx);
-        }
+        });
       }
-      if (candidates.length === 0) break;
+      if (candidates.length === 0) return;
       const pos = this.getRandomFreeCell(candidates);
       free.delete(pos);
       this.positions.push(new PositionedCharacter(ch, pos));
-    }
+    });
   }
 
   levelUpPlayers() {
-    for (const p of this.positions) {
+    this.positions.forEach((p) => {
       if (this.isPlayerCharacter(p)) {
         const ch = p.character;
         ch.level = Math.min(4, ch.level + 1);
-
         const newHealth = Math.min(100, ch.level + 80);
-
         const ratio = (80 + ch.health) / 100;
         const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * ratio));
         const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * ratio));
-
         ch.attack = attackAfter;
         ch.defence = defenceAfter;
         ch.health = newHealth;
       }
-    }
+    });
   }
 
   applyThemeForLevel(level) {
@@ -338,6 +351,7 @@ export default class GameController {
     this.gamePlay.drawUi(theme);
   }
 
+
   isPlayerCharacter(pc) {
     return ['bowman', 'swordsman', 'magician'].includes(pc.character.type);
   }
@@ -345,6 +359,7 @@ export default class GameController {
   getPCAt(index) {
     return this.positions.find((p) => p.position === index);
   }
+
 
   rangeByType(type) {
     switch (type) {
@@ -383,39 +398,39 @@ export default class GameController {
     ];
     const { r, c } = this.indexToRC(from);
     const cells = new Set();
-    for (const [dr, dc] of dirs) {
+    dirs.forEach(([dr, dc]) => {
       for (let step = 1; step <= maxSteps; step += 1) {
         const nr = r + dr * step;
         const nc = c + dc * step;
         if (nr < 0 || nc < 0 || nr >= this.boardSize || nc >= this.boardSize) break;
         cells.add(this.rcToIndex(nr, nc));
       }
-    }
+    });
     return cells;
   }
 
   attackRadius(from, maxRange) {
-  const { r, c } = this.indexToRC(from);
-  const res = new Set();
-
-  for (let nr = 0; nr < this.boardSize; nr += 1) {
-    for (let nc = 0; nc < this.boardSize; nc += 1) {
-      if (
-        !(nr === r && nc === c) &&
-        Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange
-      ) {
-        res.add(this.rcToIndex(nr, nc));
+    const { r, c } = this.indexToRC(from);
+    const res = new Set();
+    for (let nr = 0; nr < this.boardSize; nr += 1) {
+      for (let nc = 0; nc < this.boardSize; nc += 1) {
+        if (
+          !(nr === r && nc === c)
+          && Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange
+        ) {
+          res.add(this.rcToIndex(nr, nc));
+        }
       }
     }
+    return res;
   }
-  return res;
-}
 
   getRandomFreeCell(candidates) {
     if (!candidates.length) throw new Error('No free cells to place a character');
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
+ 
   typeToCtor(type) {
     switch (type) {
       case 'bowman': return Bowman;
@@ -457,7 +472,7 @@ export default class GameController {
       this.applyThemeForLevel(this.state.level);
       this.gamePlay.redrawPositions(this.positions);
     } catch (e) {
-      this.gamePlay.showError('Не удалось загрузить сохранение');
+      this.showError('Не удалось загрузить сохранение');
     }
   }
 
