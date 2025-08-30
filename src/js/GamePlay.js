@@ -21,11 +21,6 @@ export default class GamePlay {
     this.container = container;
   }
 
-  /**
-   * Draws boardEl with specific theme
-   *
-   * @param theme
-   */
   drawUi(theme) {
     this.checkBinding();
 
@@ -63,11 +58,6 @@ export default class GamePlay {
     this.cells = Array.from(this.boardEl.children);
   }
 
-  /**
-   * Draws positions (with chars) on boardEl
-   *
-   * @param positions array of PositionedCharacter objects
-   */
   redrawPositions(positions) {
     for (const cell of this.cells) {
       cell.innerHTML = '';
@@ -91,56 +81,31 @@ export default class GamePlay {
     }
   }
 
-  /**
-   * Add listener to mouse enter for cell
-   *
-   * @param callback
-   */
+  
   addCellEnterListener(callback) {
     this.cellEnterListeners.push(callback);
   }
 
-  /**
-   * Add listener to mouse leave for cell
-   *
-   * @param callback
-   */
   addCellLeaveListener(callback) {
     this.cellLeaveListeners.push(callback);
   }
 
-  /**
-   * Add listener to mouse click for cell
-   *
-   * @param callback
-   */
+
   addCellClickListener(callback) {
     this.cellClickListeners.push(callback);
   }
 
-  /**
-   * Add listener to "New Game" button click
-   *
-   * @param callback
-   */
+
   addNewGameListener(callback) {
     this.newGameListeners.push(callback);
   }
 
-  /**
-   * Add listener to "Save Game" button click
-   *
-   * @param callback
-   */
+
   addSaveGameListener(callback) {
     this.saveGameListeners.push(callback);
   }
 
-  /**
-   * Add listener to "Load Game" button click
-   *
-   * @param callback
-   */
+ 
   addLoadGameListener(callback) {
     this.loadGameListeners.push(callback);
   }

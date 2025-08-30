@@ -63,8 +63,6 @@ export default class GameController {
 
     const pcAt = this.getPCAt(index);
     const { selected } = this;
-
-
     if (pcAt && this.isPlayerCharacter(pcAt)) {
       if (selected && selected.position !== index) {
         this.gamePlay.deselectCell(selected.position);
