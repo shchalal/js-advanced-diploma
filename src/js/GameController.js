@@ -20,22 +20,31 @@ export default class GameController {
     this.selected = null;
     this.state = new GameState();
 
+  
+    this._lastHoverIndex = null;
+
     this.onCellEnter = this.onCellEnter.bind(this);
     this.onCellLeave = this.onCellLeave.bind(this);
     this.onCellClick = this.onCellClick.bind(this);
   }
 
-
-  showErrorFallback(text) {
-
-    alert(text);
+  showError(msg) {
+    if (typeof this.gamePlay.showError === 'function') {
+      this.gamePlay.showError(msg);
+    } else if (typeof this.gamePlay.showMessage === 'function') {
+      this.gamePlay.showMessage(msg);
+    } else if (typeof window !== 'undefined') {
+  
+      window.alert(msg);
+    }
   }
 
-  showError(text) {
-    const gp = this.gamePlay;
-    if (gp && typeof gp.showError === 'function') return gp.showError(text);
-    if (gp && typeof gp.showMessage === 'function') return gp.showMessage(text);
-    return this.showErrorFallback(text);
+  clearHighlights() {
+    const total = this.boardSize * this.boardSize;
+    for (let i = 0; i < total; i += 1) {
+      this.gamePlay.deselectCell(i);
+    }
+    this._lastHoverIndex = null;
   }
 
   init() {
@@ -45,6 +54,7 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
     this.gamePlay.addNewGameListener?.(() => this.newGame());
+
     this.gamePlay.addSaveGameListener?.(() => this.saveGame());
     this.gamePlay.addLoadGameListener?.(() => this.loadGame());
 
@@ -58,11 +68,13 @@ export default class GameController {
     }
   }
 
+
   onCellClick(index) {
     if (this.state.locked) return;
 
     const pcAt = this.getPCAt(index);
     const { selected } = this;
+
     if (pcAt && this.isPlayerCharacter(pcAt)) {
       if (selected && selected.position !== index) {
         this.gamePlay.deselectCell(selected.position);
@@ -73,30 +85,30 @@ export default class GameController {
       return;
     }
 
-
+    
     if (!selected) {
       this.showError('Выберите своего персонажа');
       return;
     }
 
-
     const { move, attack } = this.rangeByType(selected.character.type);
     const moveSet = this.reachableBySteps(selected.position, move);
     const attackSet = this.attackRadius(selected.position, attack);
 
-
+   
     if (!pcAt && moveSet.has(index)) {
       selected.position = index;
       this.afterPlayerAction();
       return;
     }
 
- 
+
     if (pcAt && !this.isPlayerCharacter(pcAt) && attackSet.has(index)) {
       this.attack(selected, pcAt).then(() => this.afterPlayerAction());
       return;
     }
 
+    
     this.showError('Недопустимое действие');
   }
 
@@ -107,15 +119,34 @@ export default class GameController {
     if (pcAt) {
       this.gamePlay.showCellTooltip(formatStats(pcAt.character), index);
     }
+
+   
+    if (
+      this._lastHoverIndex !== null
+      && this._lastHoverIndex !== this.state.selected
+      && this._lastHoverIndex !== index
+    ) {
+      this.gamePlay.deselectCell(this._lastHoverIndex);
+    }
+    this._lastHoverIndex = index;
+
     this.updateCursorAndHighlights(index);
   }
 
   onCellLeave(index) {
     if (this.state.locked) return;
+
     this.gamePlay.hideCellTooltip(index);
+
+
     if (!this.selected || this.selected.position !== index) {
       this.gamePlay.deselectCell(index);
     }
+
+    if (this._lastHoverIndex === index) {
+      this._lastHoverIndex = null;
+    }
+
     this.gamePlay.setCursor('auto');
   }
 
@@ -134,7 +165,9 @@ export default class GameController {
 
     const { move, attack } = this.rangeByType(selected.character.type);
     const canMove = !pcAt && this.reachableBySteps(selected.position, move).has(index);
-    const canHit = pcAt && !this.isPlayerCharacter(pcAt) && this.attackRadius(selected.position, attack).has(index);
+    const canHit = pcAt
+      && !this.isPlayerCharacter(pcAt)
+      && this.attackRadius(selected.position, attack).has(index);
 
     if (canMove) {
       this.gamePlay.setCursor('pointer');
@@ -148,6 +181,9 @@ export default class GameController {
   }
 
   afterPlayerAction() {
+   
+    this.clearHighlights();
+
     this.state.clearSelection();
     this.selected = null;
 
@@ -162,10 +198,13 @@ export default class GameController {
   async aiTurn() {
     if (this.state.locked) return;
 
+   
+    this.clearHighlights();
+
     const aiUnits = this.positions.filter((p) => !this.isPlayerCharacter(p));
     const playerUnits = this.positions.filter((p) => this.isPlayerCharacter(p));
 
- 
+   
     for (const unit of aiUnits) {
       const { attack } = this.rangeByType(unit.character.type);
       const zone = this.attackRadius(unit.position, attack);
@@ -184,23 +223,25 @@ export default class GameController {
     const occupied = new Set(this.positions.map((p) => p.position));
     const pickMove = (u) => {
       const { move } = this.rangeByType(u.character.type);
-      const candidates = [...this.reachableBySteps(u.position, move)].filter((i) => !occupied.has(i));
+      const candidates = [...this.reachableBySteps(u.position, move)]
+        .filter((i) => !occupied.has(i));
       if (candidates.length === 0) return u.position;
       let best = candidates[0];
       let bestScore = Infinity;
-      candidates.forEach((c) => {
+      for (const c of candidates) {
         const score = Math.min(...playerUnits.map((p) => this.chebyshev(c, p.position)));
         if (score < bestScore) { bestScore = score; best = c; }
-      });
+      }
       return best;
     };
 
     const mover = aiUnits[0];
     const to = pickMove(mover);
     mover.position = to;
-    this.gamePlay.redrawPositions(this.positions);
 
+    this.gamePlay.redrawPositions(this.positions);
     if (this.checkEndConditions()) return;
+
     this.state.turn = 'player';
     this.save();
   }
@@ -221,6 +262,7 @@ export default class GameController {
 
     this.gamePlay.redrawPositions(this.positions);
   }
+
 
   checkEndConditions() {
     const playerAlive = this.positions.some((p) => this.isPlayerCharacter(p));
@@ -260,9 +302,12 @@ export default class GameController {
     const keepMax = preserveMax ? this.state.maxScore : 0;
     this.state = new GameState();
     this.state.maxScore = keepMax;
-    this.applyThemeForLevel(this.state.level);
     this.selected = null;
+    this._lastHoverIndex = null;
+
+    this.applyThemeForLevel(this.state.level);
     this.spawnInitialTeams();
+    this.clearHighlights();
     this.gamePlay.redrawPositions(this.positions);
     this.save();
   }
@@ -310,7 +355,6 @@ export default class GameController {
     players.forEach((p) => free.delete(p.position));
 
     const colsEnemy = [6, 7];
-
     enemyTeam.characters.forEach((ch) => {
       const candidates = [];
       for (let r = 0; r < this.boardSize; r += 1) {
@@ -328,17 +372,15 @@ export default class GameController {
 
   levelUpPlayers() {
     this.positions.forEach((p) => {
-      if (this.isPlayerCharacter(p)) {
-        const ch = p.character;
-        ch.level = Math.min(4, ch.level + 1);
-        const newHealth = Math.min(100, ch.level + 80);
-        const ratio = (80 + ch.health) / 100;
-        const attackAfter = Math.max(ch.attack, Math.floor(ch.attack * ratio));
-        const defenceAfter = Math.max(ch.defence, Math.floor(ch.defence * ratio));
-        ch.attack = attackAfter;
-        ch.defence = defenceAfter;
-        ch.health = newHealth;
-      }
+      if (!this.isPlayerCharacter(p)) return;
+      const ch = p.character;
+      ch.level = Math.min(4, ch.level + 1);
+
+      const newHealth = Math.min(100, ch.level + 80);
+      const ratio = (80 + ch.health) / 100;
+      ch.attack = Math.max(ch.attack, Math.floor(ch.attack * ratio));
+      ch.defence = Math.max(ch.defence, Math.floor(ch.defence * ratio));
+      ch.health = newHealth;
     });
   }
 
@@ -357,7 +399,6 @@ export default class GameController {
   getPCAt(index) {
     return this.positions.find((p) => p.position === index);
   }
-
 
   rangeByType(type) {
     switch (type) {
@@ -412,10 +453,8 @@ export default class GameController {
     const res = new Set();
     for (let nr = 0; nr < this.boardSize; nr += 1) {
       for (let nc = 0; nc < this.boardSize; nc += 1) {
-        if (
-          !(nr === r && nc === c)
-          && Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange
-        ) {
+        if (nr === r && nc === c) continue;
+        if (Math.max(Math.abs(nr - r), Math.abs(nc - c)) <= maxRange) {
           res.add(this.rcToIndex(nr, nc));
         }
       }
@@ -428,7 +467,6 @@ export default class GameController {
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
- 
   typeToCtor(type) {
     switch (type) {
       case 'bowman': return Bowman;
@@ -441,6 +479,7 @@ export default class GameController {
     }
   }
 
+ 
   save() {
     try {
       this.state.positions = this.positions.map((p) => ({
@@ -455,19 +494,18 @@ export default class GameController {
       }));
       this.stateService.save(this.state);
     } catch (e) {
-
+    
     }
   }
 
-  saveGame() {
-    this.save();
-  }
+  saveGame() { this.save(); }
 
   loadGame() {
     try {
       const data = this.stateService.load();
       this.deserialize(data);
       this.applyThemeForLevel(this.state.level);
+      this.clearHighlights();
       this.gamePlay.redrawPositions(this.positions);
     } catch (e) {
       this.showError('Не удалось загрузить сохранение');
